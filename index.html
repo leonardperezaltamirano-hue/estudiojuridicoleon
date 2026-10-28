@@ -17,9 +17,8 @@
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col">
 
-    <!-- CONFIGURACIÓN DE PARÁMETROS SUPABASE -->
+    <!-- CONFIGURACIÓN CON CREDENCIALES DE SUPABASE -->
     <script>
-        // REEMPLAZA ESTOS VALORES CON LOS DE TU PROYECTO EN SUPABASE (Project Settings -> API)
         const SUPABASE_URL = "https://dtffrtpnauozqeoerxpy.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZmZydHBuYXVvenFlb2VyeHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxODczODUsImV4cCI6MjEwODc2MzM4NX0.w2HRlmzd8qGId1LJwNVF8niddaGvfWtjh7vhAGlwa-s";
 
@@ -34,8 +33,16 @@
                 <div class="inline-flex p-3 rounded-full bg-amber-100 text-amber-800 mb-3">
                     <i data-lucide="scale" class="w-8 h-8"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-900">Bufete de Abogados</h2>
+                <h2 class="text-2xl font-bold text-slate-900">Estudio Jurídico León y Asociados</h2>
                 <p class="text-sm text-slate-500 mt-1">Acceso al Sistema Judicial & Gestión de Casos</p>
+            </div>
+
+            <!-- CAJA DIAGNÓSTICO DE ERRORES -->
+            <div id="error-box" class="hidden mb-4 p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs">
+                <div class="font-bold flex items-center gap-1 mb-1">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i> Detalle del Diagnóstico:
+                </div>
+                <p id="error-msg" class="break-words font-mono text-[11px]"></p>
             </div>
 
             <!-- Formulario Auth -->
@@ -124,7 +131,7 @@
                     <button onclick="navegarA('seccion-agenda')" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition">
                         <i data-lucide="calendar" class="w-4 h-4 text-amber-500"></i> Agenda & Audiencias
                     </button>
-                    <button id="nav-finanzas" onclick="navegarA('seccion-finanzas')" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition">
+                    <button id="nav-finanzas" onclick="navegarA('seccion-finanzas')" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition solo-abogado">
                         <i data-lucide="banknote" class="w-4 h-4 text-amber-500"></i> Honorarios (BS)
                     </button>
                 </nav>
@@ -158,7 +165,7 @@
                         </div>
                     </div>
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                        <span class="text-xs font-semibold text-slate-500 uppercase">Audiencias Hoy/Semana</span>
+                        <span class="text-xs font-semibold text-slate-500 uppercase">Audiencias / Citas</span>
                         <div class="flex items-baseline justify-between mt-2">
                             <span class="text-2xl font-bold text-slate-900" id="stat-citas-proximas">0</span>
                             <i data-lucide="clock" class="w-5 h-5 text-amber-700"></i>
@@ -300,7 +307,6 @@
             </div>
 
             <div class="p-4 md:p-6 space-y-6 overflow-y-auto flex-1">
-                <!-- Información General del Caso -->
                 <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs md:text-sm">
                     <div>
                         <span class="text-slate-500 block">Materia:</span>
@@ -316,7 +322,6 @@
                     </div>
                 </div>
 
-                <!-- Adjuntar Documentos / Memoriales -->
                 <div class="space-y-3">
                     <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
                         <i data-lucide="paperclip" class="w-4 h-4 text-amber-700"></i> Adjuntar Documentación / Expediente Digital
@@ -329,7 +334,6 @@
                         </button>
                     </form>
 
-                    <!-- Lista de archivos subidos -->
                     <div id="lista-documentos-caso" class="space-y-2 pt-2">
                         <p class="text-xs text-slate-400">Sin archivos o memoriales adjuntos.</p>
                     </div>
@@ -425,7 +429,7 @@
                 <div>
                     <label class="block font-medium text-slate-700 mb-1">Caso Relacionado (NUREJ)</label>
                     <select id="cita-caso-id" class="w-full p-2.5 border rounded-lg">
-                        <!-- Opciones cargadas dinámicamente -->
+                        <!-- Opciones dinámicas -->
                     </select>
                 </div>
                 <div>
@@ -461,72 +465,101 @@
                 </div>
 
                 <div id="resultado-consulta-publica" class="hidden p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                    <!-- Resultado público dinámico -->
+                    <!-- Resultado público -->
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- LOGIC & SCRIPTS JS -->
+    <!-- LÓGICA DE CONTROL JS -->
     <script>
         let usuarioActual = null;
         let perfilUsuario = null;
         let casoSeleccionadoId = null;
 
-        // Inicialización
         document.addEventListener("DOMContentLoaded", () => {
             lucide.createIcons();
             verificarSesion();
         });
 
-        // Toggle Sidebar Móvil
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('-translate-x-full');
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
         }
 
-        // Navegación de Pestañas
         function navegarA(idSeccion) {
             document.querySelectorAll('.seccion-app').forEach(sec => sec.classList.add('hidden'));
             document.getElementById(idSeccion).classList.remove('hidden');
-            
-            // Cerrar sidebar en móvil al cambiar
             if (window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.add('-translate-x-full');
             }
         }
 
-        // Modales
         function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-        // Control de Sesiones en Supabase
+        function mostrarErrorDiagnostic(msg) {
+            const errBox = document.getElementById('error-box');
+            const errMsg = document.getElementById('error-msg');
+            errMsg.innerText = msg;
+            errBox.classList.remove('hidden');
+        }
+
+        function ocultarErrorDiagnostic() {
+            document.getElementById('error-box').classList.add('hidden');
+        }
+
         async function verificarSesion() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                usuarioActual = session.user;
-                await cargarPerfilUsuario(usuarioActual.id);
-                mostrarPantallaApp();
-            } else {
-                document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('app-screen').classList.add('hidden');
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) throw error;
+
+                if (session) {
+                    usuarioActual = session.user;
+                    await cargarPerfilUsuario(usuarioActual.id);
+                    mostrarPantallaApp();
+                } else {
+                    document.getElementById('login-screen').classList.remove('hidden');
+                    document.getElementById('app-screen').classList.add('hidden');
+                }
+            } catch (err) {
+                console.error("Error al comprobar sesión:", err);
             }
         }
 
         async function iniciarSesion() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+            ocultarErrorDiagnostic();
+            const btn = document.getElementById('btn-login');
+            const emailInput = document.getElementById('login-email').value.trim();
+            const passwordInput = document.getElementById('login-password').value;
 
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Conectando...`;
+            lucide.createIcons();
 
-            if (error) {
-                alert("Error de autenticación: " + error.message);
-                return;
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: emailInput,
+                    password: passwordInput
+                });
+
+                if (error) {
+                    mostrarErrorDiagnostic(error.message);
+                    return;
+                }
+
+                if (data && data.user) {
+                    usuarioActual = data.user;
+                    await cargarPerfilUsuario(usuarioActual.id);
+                    mostrarPantallaApp();
+                }
+            } catch (errGeneral) {
+                console.error("Excepción en Login:", errGeneral);
+                mostrarErrorDiagnostic("Error de red o excepción JS: " + errGeneral.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="log-in" class="w-4 h-4"></i> Iniciar Sesión`;
+                lucide.createIcons();
             }
-
-            usuarioActual = data.user;
-            await cargarPerfilUsuario(usuarioActual.id);
-            mostrarPantallaApp();
         }
 
         async function cerrarSesion() {
@@ -535,23 +568,26 @@
         }
 
         async function cargarPerfilUsuario(userId) {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .maybeSingle();
 
-            if (data) {
-                perfilUsuario = data;
-            } else {
-                // Perfil por defecto
+                if (data) {
+                    perfilUsuario = data;
+                } else {
+                    perfilUsuario = { nombre: usuarioActual.email.split('@')[0], rol: 'Asistente' };
+                }
+            } catch (e) {
+                console.warn("Fallo lectura de perfil. Usando por defecto.", e);
                 perfilUsuario = { nombre: usuarioActual.email.split('@')[0], rol: 'Asistente' };
             }
 
-            // Aplicar UI según rol
-            document.getElementById('user-name').innerText = perfilUsuario.nombre;
-            document.getElementById('user-role').innerText = perfilUsuario.rol;
-            document.getElementById('user-avatar').innerText = perfilUsuario.nombre.charAt(0).toUpperCase();
+            document.getElementById('user-name').innerText = perfilUsuario.nombre || 'Usuario';
+            document.getElementById('user-role').innerText = perfilUsuario.rol || 'Asistente';
+            document.getElementById('user-avatar').innerText = (perfilUsuario.nombre || 'U').charAt(0).toUpperCase();
 
             if (perfilUsuario.rol !== 'Abogado') {
                 document.querySelectorAll('.solo-abogado').forEach(el => el.classList.add('hidden'));
@@ -568,21 +604,18 @@
             cargarAgenda();
         }
 
-        // CARGA DE DATOS DESDE SUPABASE
         async function cargarDatosDashboard() {
             const { data: casos } = await supabase.from('casos').select('*');
             const { data: citas } = await supabase.from('citas').select('*');
 
             if (casos) {
                 document.getElementById('stat-casos-totales').innerText = casos.length;
-                
                 let pagado = casos.reduce((acc, c) => acc + Number(c.monto_pagado || 0), 0);
                 let total = casos.reduce((acc, c) => acc + Number(c.honorarios_totales || 0), 0);
                 
                 document.getElementById('stat-monto-pagado').innerText = `Bs ${pagado.toFixed(2)}`;
                 document.getElementById('stat-monto-pendiente').innerText = `Bs ${(total - pagado).toFixed(2)}`;
 
-                // Cargar lista dashboard casos
                 const contenedor = document.getElementById('lista-dashboard-casos');
                 contenedor.innerHTML = casos.slice(0, 4).map(c => `
                     <div class="p-2.5 bg-slate-50 rounded-lg border flex justify-between items-center text-xs">
@@ -597,7 +630,6 @@
 
             if (citas) {
                 document.getElementById('stat-citas-proximas').innerText = citas.length;
-
                 const contenedorCitas = document.getElementById('lista-dashboard-citas');
                 contenedorCitas.innerHTML = citas.slice(0, 4).map(ct => `
                     <div class="p-2.5 bg-slate-50 rounded-lg border flex justify-between items-center text-xs">
@@ -612,10 +644,7 @@
         }
 
         async function cargarCasos() {
-            const { data: casos } = await supabase
-                .from('casos')
-                .select('*, clientes(nombre, ci)');
-
+            const { data: casos } = await supabase.from('casos').select('*, clientes(nombre, ci)');
             const tbody = document.getElementById('tabla-casos-body');
             const tbodyFinanzas = document.getElementById('tabla-finanzas-body');
             const selectCasosCita = document.getElementById('cita-caso-id');
@@ -629,10 +658,8 @@
                     const clienteNombre = c.clientes ? c.clientes.nombre : 'S/I';
                     const clienteCi = c.clientes ? c.clientes.ci : 'S/I';
 
-                    // Rellenar Select Modal Cita
                     selectCasosCita.innerHTML += `<option value="${c.id}">NUREJ: ${c.nurej} - ${clienteNombre}</option>`;
 
-                    // Tabla Procesos
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50">
                             <td class="p-3.5 font-bold text-slate-800">${c.nurej}</td>
@@ -656,7 +683,6 @@
                         </tr>
                     `;
 
-                    // Tabla Finanzas
                     const saldo = Number(c.honorarios_totales) - Number(c.monto_pagado);
                     tbodyFinanzas.innerHTML += `
                         <tr class="hover:bg-slate-50">
@@ -702,7 +728,6 @@
             }
         }
 
-        // ACCIONES DE FORMULARIO
         async function guardarNuevoCaso() {
             const nurej = document.getElementById('caso-nurej').value;
             const clienteNombre = document.getElementById('caso-cliente-nombre').value;
@@ -712,14 +737,12 @@
             const honorarios = document.getElementById('caso-honorarios').value;
             const resumen = document.getElementById('caso-resumen').value;
 
-            // 1. Crear o recuperar cliente
             let { data: cliente } = await supabase.from('clientes').select('id').eq('ci', clienteCi).maybeSingle();
             if (!cliente) {
                 const { data: nuevoCliente } = await supabase.from('clientes').insert([{ nombre: clienteNombre, ci: clienteCi }]).select().single();
                 cliente = nuevoCliente;
             }
 
-            // 2. Registrar Caso
             const { error } = await supabase.from('casos').insert([{
                 nurej,
                 cliente_id: cliente.id,
@@ -762,7 +785,6 @@
             }
         }
 
-        // EXPEDIENTE DIGITAL & SUBIDA DE ARCHIVOS A SUPABASE STORAGE
         async function verExpedienteCaso(casoId) {
             casoSeleccionadoId = casoId;
             const { data: caso } = await supabase.from('casos').select('*, clientes(*)').eq('id', casoId).single();
@@ -787,18 +809,15 @@
             const fileExt = file.name.split('.').pop();
             const filePath = `${casoSeleccionadoId}/${Date.now()}.${fileExt}`;
 
-            // Subir a Storage Bucket 'expedientes'
             const { data, error } = await supabase.storage.from('expedientes').upload(filePath, file);
 
             if (error) {
-                alert("Error al subir archivo a Supabase Storage: " + error.message);
+                alert("Error al subir archivo a Storage: " + error.message);
                 return;
             }
 
-            // Obtener URL Pública
             const { data: publicUrlData } = supabase.storage.from('expedientes').getPublicUrl(filePath);
 
-            // Registrar en base de datos
             await supabase.from('documentos_caso').insert([{
                 caso_id: casoSeleccionadoId,
                 nombre_archivo: file.name,
@@ -842,7 +861,6 @@
             cargarDatosDashboard();
         }
 
-        // CONSULTA PÚBLICA
         function abrirModalConsultaPublica() {
             document.getElementById('resultado-consulta-publica').classList.add('hidden');
             abrirModal('modal-consulta-publica');
