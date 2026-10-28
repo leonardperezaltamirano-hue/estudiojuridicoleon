@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Supabase JS Client CDN -->
+    <!-- Supabase JS Client CDN (Carga prioritaria) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
@@ -17,13 +17,24 @@
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col">
 
-    <!-- CONFIGURACIÓN CON CREDENCIALES DE SUPABASE -->
+    <!-- CONFIGURACIÓN SEGURO DE SUPABASE -->
     <script>
         const SUPABASE_URL = "https://dtffrtpnauozqeoerxpy.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZmZydHBuYXVvenFlb2VyeHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxODczODUsImV4cCI6MjEwODc2MzM4NX0.w2HRlmzd8qGId1LJwNVF8niddaGvfWtjh7vhAGlwa-s";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZmZydHBuYXVozFlxZW9lcnhweSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzkzMTg3Mzg1LCJleHAiOjIxMDg3NjMzODV9.w2HRlmzd8qGId1LJwNVF8niddaGvfWtjh7vhAGlwa-s";
 
-        // Inicializar cliente Supabase
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let supabaseClient = null;
+
+        // Función segura para obtener la instancia activa de Supabase
+        function getSupabase() {
+            if (!supabaseClient) {
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } else {
+                    console.error("SDK de Supabase aún no disponible en window.supabase");
+                }
+            }
+            return supabaseClient;
+        }
     </script>
 
     <!-- PANTALLA DE LOGIN -->
@@ -33,14 +44,14 @@
                 <div class="inline-flex p-3 rounded-full bg-amber-100 text-amber-800 mb-3">
                     <i data-lucide="scale" class="w-8 h-8"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-900">Estudio Jurídico León y Asociados</h2>
+                <h2 class="text-2xl font-bold text-slate-900">Bufete de Abogados</h2>
                 <p class="text-sm text-slate-500 mt-1">Acceso al Sistema Judicial & Gestión de Casos</p>
             </div>
 
             <!-- CAJA DIAGNÓSTICO DE ERRORES -->
             <div id="error-box" class="hidden mb-4 p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs">
                 <div class="font-bold flex items-center gap-1 mb-1">
-                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i> Detalle del Diagnóstico:
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i> Diagnóstico del Sistema:
                 </div>
                 <p id="error-msg" class="break-words font-mono text-[11px]"></p>
             </div>
@@ -221,7 +232,6 @@
                     </button>
                 </div>
 
-                <!-- Tabla de casos -->
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-xs md:text-sm">
@@ -255,7 +265,6 @@
                     </button>
                 </div>
 
-                <!-- Contenedor Agenda -->
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6">
                     <div id="lista-agenda" class="space-y-3">
                         <!-- Citas dinámicas -->
@@ -478,7 +487,7 @@
         let casoSeleccionadoId = null;
 
         document.addEventListener("DOMContentLoaded", () => {
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
             verificarSesion();
         });
 
@@ -510,7 +519,10 @@
 
         async function verificarSesion() {
             try {
-                const { data: { session }, error } = await supabase.auth.getSession();
+                const sb = getSupabase();
+                if (!sb) return;
+
+                const { data: { session }, error } = await sb.auth.getSession();
                 if (error) throw error;
 
                 if (session) {
@@ -528,16 +540,23 @@
 
         async function iniciarSesion() {
             ocultarErrorDiagnostic();
+
+            const sb = getSupabase();
+            if (!sb) {
+                mostrarErrorDiagnostic("El SDK de Supabase no cargó correctamente. Revisa la conexión o deshabilita bloqueadores de anuncios.");
+                return;
+            }
+
             const btn = document.getElementById('btn-login');
             const emailInput = document.getElementById('login-email').value.trim();
             const passwordInput = document.getElementById('login-password').value;
 
             btn.disabled = true;
             btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Conectando...`;
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
 
             try {
-                const { data, error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await sb.auth.signInWithPassword({
                     email: emailInput,
                     password: passwordInput
                 });
@@ -554,22 +573,24 @@
                 }
             } catch (errGeneral) {
                 console.error("Excepción en Login:", errGeneral);
-                mostrarErrorDiagnostic("Error de red o excepción JS: " + errGeneral.message);
+                mostrarErrorDiagnostic("Error al conectar: " + errGeneral.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i data-lucide="log-in" class="w-4 h-4"></i> Iniciar Sesión`;
-                lucide.createIcons();
+                if (window.lucide) lucide.createIcons();
             }
         }
 
         async function cerrarSesion() {
-            await supabase.auth.signOut();
+            const sb = getSupabase();
+            if (sb) await sb.auth.signOut();
             window.location.reload();
         }
 
         async function cargarPerfilUsuario(userId) {
+            const sb = getSupabase();
             try {
-                const { data, error } = await supabase
+                const { data, error } = await sb
                     .from('profiles')
                     .select('*')
                     .eq('id', userId)
@@ -605,8 +626,11 @@
         }
 
         async function cargarDatosDashboard() {
-            const { data: casos } = await supabase.from('casos').select('*');
-            const { data: citas } = await supabase.from('citas').select('*');
+            const sb = getSupabase();
+            if (!sb) return;
+
+            const { data: casos } = await sb.from('casos').select('*');
+            const { data: citas } = await sb.from('citas').select('*');
 
             if (casos) {
                 document.getElementById('stat-casos-totales').innerText = casos.length;
@@ -644,7 +668,10 @@
         }
 
         async function cargarCasos() {
-            const { data: casos } = await supabase.from('casos').select('*, clientes(nombre, ci)');
+            const sb = getSupabase();
+            if (!sb) return;
+
+            const { data: casos } = await sb.from('casos').select('*, clientes(nombre, ci)');
             const tbody = document.getElementById('tabla-casos-body');
             const tbodyFinanzas = document.getElementById('tabla-finanzas-body');
             const selectCasosCita = document.getElementById('cita-caso-id');
@@ -699,12 +726,15 @@
                         </tr>
                     `;
                 });
-                lucide.createIcons();
+                if (window.lucide) lucide.createIcons();
             }
         }
 
         async function cargarAgenda() {
-            const { data: citas } = await supabase.from('citas').select('*').order('fecha_hora', { ascending: true });
+            const sb = getSupabase();
+            if (!sb) return;
+
+            const { data: citas } = await sb.from('citas').select('*').order('fecha_hora', { ascending: true });
             const contenedor = document.getElementById('lista-agenda');
             contenedor.innerHTML = '';
 
@@ -729,6 +759,9 @@
         }
 
         async function guardarNuevoCaso() {
+            const sb = getSupabase();
+            if (!sb) return;
+
             const nurej = document.getElementById('caso-nurej').value;
             const clienteNombre = document.getElementById('caso-cliente-nombre').value;
             const clienteCi = document.getElementById('caso-cliente-ci').value;
@@ -737,13 +770,13 @@
             const honorarios = document.getElementById('caso-honorarios').value;
             const resumen = document.getElementById('caso-resumen').value;
 
-            let { data: cliente } = await supabase.from('clientes').select('id').eq('ci', clienteCi).maybeSingle();
+            let { data: cliente } = await sb.from('clientes').select('id').eq('ci', clienteCi).maybeSingle();
             if (!cliente) {
-                const { data: nuevoCliente } = await supabase.from('clientes').insert([{ nombre: clienteNombre, ci: clienteCi }]).select().single();
+                const { data: nuevoCliente } = await sb.from('clientes').insert([{ nombre: clienteNombre, ci: clienteCi }]).select().single();
                 cliente = nuevoCliente;
             }
 
-            const { error } = await supabase.from('casos').insert([{
+            const { error } = await sb.from('casos').insert([{
                 nurej,
                 cliente_id: cliente.id,
                 materia,
@@ -762,13 +795,16 @@
         }
 
         async function guardarNuevaCita() {
+            const sb = getSupabase();
+            if (!sb) return;
+
             const titulo = document.getElementById('cita-titulo').value;
             const tipo = document.getElementById('cita-tipo').value;
             const fechaHora = document.getElementById('cita-fechahora').value;
             const casoId = document.getElementById('cita-caso-id').value || null;
             const notas = document.getElementById('cita-notas').value;
 
-            const { error } = await supabase.from('citas').insert([{
+            const { error } = await sb.from('citas').insert([{
                 titulo,
                 tipo,
                 fecha_hora: fechaHora,
@@ -786,8 +822,11 @@
         }
 
         async function verExpedienteCaso(casoId) {
+            const sb = getSupabase();
+            if (!sb) return;
+
             casoSeleccionadoId = casoId;
-            const { data: caso } = await supabase.from('casos').select('*, clientes(*)').eq('id', casoId).single();
+            const { data: caso } = await sb.from('casos').select('*, clientes(*)').eq('id', casoId).single();
 
             if (caso) {
                 document.getElementById('modal-expediente-nurej').innerText = `NUREJ: ${caso.nurej}`;
@@ -802,6 +841,9 @@
         }
 
         async function subirArchivoCaso() {
+            const sb = getSupabase();
+            if (!sb) return;
+
             const fileInput = document.getElementById('input-archivo');
             if (!fileInput.files || fileInput.files.length === 0) return;
 
@@ -809,16 +851,16 @@
             const fileExt = file.name.split('.').pop();
             const filePath = `${casoSeleccionadoId}/${Date.now()}.${fileExt}`;
 
-            const { data, error } = await supabase.storage.from('expedientes').upload(filePath, file);
+            const { data, error } = await sb.storage.from('expedientes').upload(filePath, file);
 
             if (error) {
                 alert("Error al subir archivo a Storage: " + error.message);
                 return;
             }
 
-            const { data: publicUrlData } = supabase.storage.from('expedientes').getPublicUrl(filePath);
+            const { data: publicUrlData } = sb.storage.from('expedientes').getPublicUrl(filePath);
 
-            await supabase.from('documentos_caso').insert([{
+            await sb.from('documentos_caso').insert([{
                 caso_id: casoSeleccionadoId,
                 nombre_archivo: file.name,
                 url_archivo: publicUrlData.publicUrl,
@@ -830,7 +872,10 @@
         }
 
         async function cargarArchivosCaso(casoId) {
-            const { data: docs } = await supabase.from('documentos_caso').select('*').eq('caso_id', casoId);
+            const sb = getSupabase();
+            if (!sb) return;
+
+            const { data: docs } = await sb.from('documentos_caso').select('*').eq('caso_id', casoId);
             const contenedor = document.getElementById('lista-documentos-caso');
 
             if (docs && docs.length > 0) {
@@ -845,18 +890,21 @@
                         </a>
                     </div>
                 `).join('');
-                lucide.createIcons();
+                if (window.lucide) lucide.createIcons();
             } else {
                 contenedor.innerHTML = '<p class="text-xs text-slate-400">Sin archivos o memoriales adjuntos.</p>';
             }
         }
 
         async function registrarAbono(casoId, montoPagadoActual) {
+            const sb = getSupabase();
+            if (!sb) return;
+
             const monto = prompt("Ingrese el monto del abono en Bolivianos (Bs):");
             if (!monto || isNaN(monto)) return;
 
             const nuevoMonto = Number(montoPagadoActual) + Number(monto);
-            await supabase.from('casos').update({ monto_pagado: nuevoMonto }).eq('id', casoId);
+            await sb.from('casos').update({ monto_pagado: nuevoMonto }).eq('id', casoId);
             cargarCasos();
             cargarDatosDashboard();
         }
@@ -867,10 +915,13 @@
         }
 
         async function ejecutarConsultaPublica() {
+            const sb = getSupabase();
+            if (!sb) return;
+
             const criterio = document.getElementById('consulta-criterio').value.trim();
             if (!criterio) return;
 
-            const { data: casos } = await supabase
+            const { data: casos } = await sb
                 .from('casos')
                 .select('nurej, materia, juzgado, estado, clientes!inner(nombre, ci)')
                 .or(`nurej.eq.${criterio},clientes.ci.eq.${criterio}`);
