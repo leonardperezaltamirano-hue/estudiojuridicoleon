@@ -2,104 +2,122 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Estudio Jurídico — Sistema de gestión</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
-  --navy:#1B2A41; --navy-dark:#121D2D; --gold:#B08D57; --gold-dark:#8E7042;
+  --navy:#1B2A41; --navy-dark:#121D2D; --gold:#B08D57; --gold-dark:#8E7042; --gold-light:#F3EAD9;
   --paper:#FAF8F3; --card:#FFFFFF; --ink:#22262B; --slate:#5B6B7F;
-  --line:#E4DFD3; --ok:#3F6B4E; --warn:#B08D57; --danger:#9B3B3B;
-  --radius:10px;
+  --line:#E7E2D5; --ok:#3F6B4E; --ok-bg:#E7EFE9; --warn:#B08D57; --danger:#9B3B3B; --danger-bg:#F6E6E6;
+  --radius:12px; --shadow:0 1px 2px rgba(27,42,65,.05), 0 6px 18px rgba(27,42,65,.06);
 }
 *{box-sizing:border-box;}
-body{margin:0;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);}
+html,body{height:100%;}
+body{margin:0;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
 h1,h2,h3,.brand{font-family:'Lora',serif;}
 button{font-family:inherit;cursor:pointer;}
 input,select,textarea{font-family:inherit;}
+a{color:inherit;}
 ::-webkit-scrollbar{width:8px;height:8px;}
 ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.fade-in{animation:fadeUp .25s ease both;}
+@media (prefers-reduced-motion: reduce){ .fade-in{animation:none;} * {transition:none !important;} }
 
 /* ---------- Pantalla de configuración / login ---------- */
 #authScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-.auth-box{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:36px 32px;}
+.auth-box{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:38px 32px;box-shadow:var(--shadow);}
 .auth-box h1{font-size:1.5rem;margin:0 0 4px;color:var(--navy);}
-.auth-box p.sub{color:var(--slate);margin:0 0 24px;font-size:.92rem;}
+.auth-box p.sub{color:var(--slate);margin:0 0 24px;font-size:.92rem;line-height:1.5;}
 .field{margin-bottom:14px;}
 .field label{display:block;font-size:.82rem;color:var(--slate);margin-bottom:5px;}
-.field input,.field select,.field textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;font-size:.95rem;background:#fff;color:var(--ink);}
-.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--gold);outline-offset:1px;}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:7px;padding:10px 18px;font-size:.92rem;font-weight:600;}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:.95rem;background:#fff;color:var(--ink);transition:border-color .15s;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(176,141,87,.15);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:8px;padding:11px 18px;font-size:.92rem;font-weight:600;transition:background .15s,transform .1s;}
+.btn:active{transform:translateY(1px);}
 .btn-primary{background:var(--navy);color:#fff;width:100%;}
 .btn-primary:hover{background:var(--navy-dark);}
 .btn-ghost{background:transparent;color:var(--navy);border:1px solid var(--line);width:100%;margin-top:8px;}
 .btn-link{background:none;border:none;color:var(--gold-dark);font-size:.85rem;text-decoration:underline;padding:0;}
-.auth-tabs{display:flex;gap:6px;margin-bottom:20px;}
-.auth-tabs button{flex:1;padding:8px;border:1px solid var(--line);background:#fff;border-radius:7px;font-size:.85rem;color:var(--slate);}
-.auth-tabs button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
-.msg{font-size:.85rem;margin-top:10px;padding:8px 10px;border-radius:6px;}
-.msg.err{background:#F6E6E6;color:var(--danger);}
-.msg.ok{background:#E7EFE9;color:var(--ok);}
+.msg{font-size:.85rem;margin-top:12px;padding:9px 11px;border-radius:7px;}
+.msg.err{background:var(--danger-bg);color:var(--danger);}
+.msg.ok{background:var(--ok-bg);color:var(--ok);}
 .hidden{display:none !important;}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0;}
 
 /* ---------- Shell de la app ---------- */
-#appShell{display:none;min-height:100vh;}
+#appShell{display:none;min-height:100vh;height:100vh;overflow:hidden;}
 #appShell.show{display:flex;}
-.sidebar{width:230px;background:var(--navy);color:#EFE9DC;flex-shrink:0;display:flex;flex-direction:column;padding:22px 0;}
-.sidebar .brand{color:#fff;font-size:1.15rem;padding:0 22px 20px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:10px;}
-.sidebar .brand small{display:block;font-family:'Inter',sans-serif;color:var(--gold);font-size:.7rem;letter-spacing:.03em;margin-top:2px;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:11px 22px;color:#C9CFDA;font-size:.92rem;border-left:3px solid transparent;}
-.nav-item:hover{background:rgba(255,255,255,.05);color:#fff;}
-.nav-item.active{background:rgba(255,255,255,.08);color:#fff;border-left-color:var(--gold);}
+.sidebar{width:230px;background:var(--navy);color:#EFE9DC;flex-shrink:0;display:flex;flex-direction:column;padding:22px 0;transition:left .22s ease;}
+.sidebar .brand{color:#fff;font-size:1.1rem;padding:0 22px 20px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:10px;}
+.sidebar .brand small{display:block;font-family:'Inter',sans-serif;color:var(--gold);font-size:.68rem;letter-spacing:.03em;margin-top:3px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 22px;color:#C9CFDA;font-size:.92rem;border-left:3px solid transparent;transition:background .15s,color .15s;}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+.nav-item.active{background:rgba(255,255,255,.09);color:#fff;border-left-color:var(--gold);}
 .nav-spacer{flex:1;}
-.nav-foot{padding:14px 22px;border-top:1px solid rgba(255,255,255,.12);font-size:.82rem;color:#9AA4B5;}
-.main{flex:1;min-width:0;display:flex;flex-direction:column;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--line);background:var(--card);}
-.topbar h2{margin:0;font-size:1.25rem;color:var(--navy);}
-.content{padding:26px 28px;overflow-y:auto;}
+.nav-foot{display:flex;align-items:center;gap:10px;padding:14px 22px;border-top:1px solid rgba(255,255,255,.12);font-size:.82rem;color:#D8DCE4;}
+.nav-foot .who{min-width:0;}
+.nav-foot .who .nm{font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav-foot .who .rl{color:var(--gold);font-size:.74rem;text-transform:capitalize;}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;height:100vh;}
+.topbar{display:flex;align-items:center;gap:12px;padding:16px 28px;border-bottom:1px solid var(--line);background:var(--card);flex-shrink:0;}
+.topbar h2{margin:0;font-size:1.2rem;color:var(--navy);flex:1;}
+.hamburger{display:none;background:none;border:none;font-size:1.3rem;color:var(--navy);padding:4px 6px;}
+.content{padding:26px 28px;overflow-y:auto;flex:1;}
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.75rem;font-weight:600;}
-.badge-rol{background:#EFE6D8;color:var(--gold-dark);}
+.badge-rol{background:var(--gold-light);color:var(--gold-dark);text-transform:capitalize;}
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(18,29,45,.45);z-index:39;}
+.sidebar-backdrop.show{display:block;}
 
 /* ---------- Dashboard ---------- */
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:26px;}
-.stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:26px;}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);transition:transform .15s;}
 .stat-card .num{font-family:'Lora',serif;font-size:2rem;color:var(--navy);line-height:1;}
 .stat-card .lbl{color:var(--slate);font-size:.85rem;margin-top:6px;}
 .stat-card.urgent .num{color:var(--danger);}
 
 /* ---------- Tablas y tarjetas ---------- */
-.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:22px;}
-.panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:22px;box-shadow:var(--shadow);}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
 .panel-head h3{margin:0;font-size:1.02rem;color:var(--navy);}
-table{width:100%;border-collapse:collapse;font-size:.88rem;}
-th{text-align:left;padding:10px 16px;color:var(--slate);font-weight:600;border-bottom:1px solid var(--line);font-size:.78rem;}
-td{padding:11px 16px;border-bottom:1px solid var(--line);}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:520px;}
+th{text-align:left;padding:10px 16px;color:var(--slate);font-weight:600;border-bottom:1px solid var(--line);font-size:.76rem;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;}
+td{padding:12px 16px;border-bottom:1px solid var(--line);white-space:nowrap;}
 tr:last-child td{border-bottom:none;}
-tr.row-click{cursor:pointer;}
+tr.row-click{cursor:pointer;transition:background .12s;}
 tr.row-click:hover{background:#FBF9F4;}
 .pill{padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:600;white-space:nowrap;}
-.pill-Activo{background:#E7EFE9;color:var(--ok);}
-.pill-Suspendido{background:#F3EAD9;color:var(--warn);}
+.pill-Activo{background:var(--ok-bg);color:var(--ok);}
+.pill-Suspendido{background:var(--gold-light);color:var(--warn);}
 .pill-Archivado{background:#ECECEC;color:var(--slate);}
 .pill-Concluido{background:#E3E7EE;color:var(--navy);}
-.empty{padding:34px 18px;text-align:center;color:var(--slate);font-size:.9rem;}
+.empty{padding:38px 18px;text-align:center;color:var(--slate);font-size:.9rem;}
+.skel{height:14px;background:linear-gradient(90deg,#EFEAE0 25%,#F6F3EC 37%,#EFEAE0 63%);background-size:400% 100%;animation:shimmer 1.3s infinite;border-radius:5px;}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
 
 /* ---------- Modal ---------- */
 .overlay{position:fixed;inset:0;background:rgba(18,29,45,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:50;}
 .overlay.show{display:flex;}
-.modal{background:#fff;border-radius:var(--radius);width:100%;max-width:560px;max-height:88vh;overflow-y:auto;padding:26px 28px;}
+.modal{background:#fff;border-radius:var(--radius);width:100%;max-width:560px;max-height:88vh;overflow-y:auto;padding:26px 28px;box-shadow:0 20px 60px rgba(18,29,45,.25);}
 .modal h3{margin:0 0 18px;color:var(--navy);}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;}
-.btn-sm{padding:7px 14px;font-size:.85rem;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--navy);}
+.btn-sm{padding:8px 14px;font-size:.85rem;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--navy);transition:background .15s;}
+.btn-sm:hover{background:#F6F3EC;}
 .btn-sm.primary{background:var(--navy);color:#fff;border-color:var(--navy);}
+.btn-sm.primary:hover{background:var(--navy-dark);}
 
 /* ---------- Tabs dentro del caso ---------- */
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;}
-.tab-btn{padding:9px 16px;border:none;background:none;color:var(--slate);font-size:.88rem;border-bottom:2px solid transparent;}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto;}
+.tab-btn{padding:9px 16px;border:none;background:none;color:var(--slate);font-size:.88rem;border-bottom:2px solid transparent;white-space:nowrap;}
 .tab-btn.active{color:var(--navy);border-bottom-color:var(--gold);font-weight:600;}
+
+/* ---------- Usuarios (admin) ---------- */
+.user-row select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:.84rem;}
 
 /* ---------- Portal público ---------- */
 #portalScreen{min-height:100vh;background:var(--paper);display:none;}
@@ -107,24 +125,37 @@ tr.row-click:hover{background:#FBF9F4;}
 .portal-wrap{max-width:640px;margin:0 auto;padding:60px 24px;}
 .portal-wrap h1{color:var(--navy);margin-bottom:4px;}
 .portal-wrap p.sub{color:var(--slate);margin-top:0;}
-.portal-result{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-top:18px;}
-.portal-result .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:.9rem;}
+.portal-result{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-top:18px;box-shadow:var(--shadow);}
+.portal-result .row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.9rem;}
 .portal-result .row:last-child{border-bottom:none;}
 .doc-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:.88rem;}
 .doc-item:last-child{border-bottom:none;}
+
 @media(max-width:760px){
-  .sidebar{position:fixed;left:-230px;top:0;bottom:0;z-index:40;transition:left .2s;}
-  .sidebar.open{left:0;}
+  .hamburger{display:inline-block;}
+  .sidebar{position:fixed;left:-240px;top:0;bottom:0;z-index:40;width:220px;}
+  .sidebar.open{left:0;box-shadow:8px 0 24px rgba(0,0,0,.18);}
+  .main{width:100%;}
+  .content{padding:18px 16px;}
+  .topbar{padding:14px 16px;}
   .grid-2{grid-template-columns:1fr;}
+  .modal{padding:22px 18px;max-height:92vh;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:12px;}
+  .stat-card{padding:14px 14px;}
+  .stat-card .num{font-size:1.5rem;}
+  .panel-head{align-items:flex-start;}
+}
+@media(max-width:420px){
+  .stat-grid{grid-template-columns:1fr 1fr;}
 }
 </style>
 </head>
 <body>
 
-<!-- ===================== PANTALLA DE CONFIGURACIÓN / LOGIN ===================== -->
+<!-- ===================== PANTALLA DE CONFIGURACIÓN / LOGIN / ACTIVACIÓN ===================== -->
 <div id="authScreen">
-  <div class="auth-box">
-    <div id="setupPane">
+  <div class="auth-box fade-in">
+    <div id="setupPane" class="hidden">
       <h1>Conectar con Supabase</h1>
       <p class="sub">Ingresa una sola vez los datos de tu proyecto de Supabase (Project Settings → API).</p>
       <div class="field"><label>Project URL</label><input id="cfgUrl" placeholder="https://xxxx.supabase.co"></div>
@@ -136,32 +167,31 @@ tr.row-click:hover{background:#FBF9F4;}
     <div id="loginPane" class="hidden">
       <h1 class="brand">Estudio Jurídico</h1>
       <p class="sub">Acceso del personal</p>
-      <div class="auth-tabs">
-        <button id="tabLogin" class="active" onclick="cambiarTab('login')">Ingresar</button>
-        <button id="tabSignup" onclick="cambiarTab('signup')">Crear cuenta</button>
-      </div>
-      <div id="loginFields">
-        <div class="field"><label>Correo</label><input id="loginEmail" type="email"></div>
-        <div class="field"><label>Contraseña</label><input id="loginPass" type="password"></div>
-        <button class="btn btn-primary" onclick="ingresar()">Ingresar</button>
-      </div>
-      <div id="signupFields" class="hidden">
-        <div class="field"><label>Nombre completo</label><input id="suNombre"></div>
-        <div class="field"><label>Correo</label><input id="suEmail" type="email"></div>
-        <div class="field"><label>Contraseña</label><input id="suPass" type="password"></div>
-        <button class="btn btn-primary" onclick="registrar()">Crear cuenta</button>
-        <p class="sub" style="margin-top:8px;font-size:.78rem;">El primer usuario registrado queda como administrador; los siguientes ingresan como asistente hasta que el admin les asigne un rol.</p>
-      </div>
+      <div class="field"><label>Correo</label><input id="loginEmail" type="email" autocomplete="username"></div>
+      <div class="field"><label>Contraseña</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+      <button class="btn btn-primary" onclick="ingresar()">Ingresar</button>
       <div id="loginMsg"></div>
-      <button class="btn-link" style="margin-top:16px;" onclick="irAPortal()">¿Eres cliente? Consulta el estado de tu caso aquí →</button>
-      <br><button class="btn-link" style="margin-top:10px;color:var(--slate);" onclick="cambiarConfig()">Cambiar proyecto de Supabase</button>
+      <p class="sub" style="margin-top:18px;font-size:.8rem;">Solo personal invitado por el administrador puede ingresar. Si no tienes cuenta, pide una invitación.</p>
+      <button class="btn-link" style="margin-top:4px;" onclick="irAPortal()">¿Eres cliente? Consulta el estado de tu caso aquí →</button>
+      <br><button class="btn-link" style="margin-top:12px;color:var(--slate);" onclick="cambiarConfig()">Cambiar proyecto de Supabase</button>
+    </div>
+
+    <div id="activatePane" class="hidden">
+      <h1 class="brand">Activar cuenta</h1>
+      <p class="sub">Usa el correo exacto al que te invitó el administrador del estudio y crea tu contraseña.</p>
+      <div class="field"><label>Nombre completo</label><input id="actNombre"></div>
+      <div class="field"><label>Correo invitado</label><input id="actEmail" type="email"></div>
+      <div class="field"><label>Crear contraseña</label><input id="actPass" type="password"></div>
+      <button class="btn btn-primary" onclick="activarCuenta()">Activar cuenta</button>
+      <div id="activateMsg"></div>
+      <button class="btn-link" style="margin-top:14px;" onclick="location.hash='';location.reload();">← Ya tengo cuenta, ir a ingresar</button>
     </div>
   </div>
 </div>
 
 <!-- ===================== PORTAL PÚBLICO DE CONSULTA ===================== -->
 <div id="portalScreen">
-  <div class="portal-wrap">
+  <div class="portal-wrap fade-in">
     <button class="btn-link" onclick="salirPortal()">← Volver al acceso del personal</button>
     <h1 style="margin-top:18px;">Consulta tu caso</h1>
     <p class="sub">Busca por tu código NUREJ/IANUS o tu número de Carnet de Identidad.</p>
@@ -172,6 +202,7 @@ tr.row-click:hover{background:#FBF9F4;}
 </div>
 
 <!-- ===================== APP PRINCIPAL ===================== -->
+<div class="sidebar-backdrop" id="sbBackdrop" onclick="toggleSidebar(false)"></div>
 <div id="appShell">
   <aside class="sidebar" id="sidebar">
     <div class="brand">Estudio Jurídico
@@ -182,13 +213,18 @@ tr.row-click:hover{background:#FBF9F4;}
     <a class="nav-item" data-view="agenda" onclick="irVista('agenda')">📅 Agenda</a>
     <a class="nav-item" data-view="honorarios" onclick="irVista('honorarios')">💰 Honorarios (Bs.)</a>
     <a class="nav-item" data-view="clientes" onclick="irVista('clientes')">👤 Clientes</a>
+    <a class="nav-item hidden" id="navUsuarios" data-view="usuarios" onclick="irVista('usuarios')">🛡️ Usuarios</a>
     <div class="nav-spacer"></div>
-    <div class="nav-foot" id="userFoot">—</div>
+    <div class="nav-foot">
+      <div class="avatar" id="userAvatar">—</div>
+      <div class="who"><div class="nm" id="userNombreLbl">—</div><div class="rl" id="userRolLbl2">—</div></div>
+    </div>
     <a class="nav-item" onclick="cerrarSesion()">🚪 Cerrar sesión</a>
   </aside>
 
   <div class="main">
     <div class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
       <h2 id="viewTitle">Dashboard</h2>
     </div>
     <div class="content" id="content"></div>
@@ -250,6 +286,20 @@ tr.row-click:hover{background:#FBF9F4;}
   </div>
 </div></div>
 
+<div class="overlay" id="overlayInvitar"><div class="modal" style="max-width:440px;">
+  <h3>Invitar usuario</h3>
+  <p class="sub" style="margin-top:-10px;color:var(--slate);font-size:.85rem;">La persona deberá entrar al enlace de activación con este mismo correo para crear su cuenta.</p>
+  <div class="field"><label>Nombre completo</label><input id="invNombre"></div>
+  <div class="field"><label>Correo</label><input id="invEmail" type="email"></div>
+  <div class="field"><label>Rol</label>
+    <select id="invRol"><option value="abogado">Abogado</option><option value="asistente">Asistente</option><option value="secretaria">Secretaria</option><option value="admin">Administrador</option></select>
+  </div>
+  <div class="modal-actions">
+    <button class="btn-sm" onclick="cerrarModal('overlayInvitar')">Cancelar</button>
+    <button class="btn-sm primary" onclick="crearInvitacion()">Crear invitación</button>
+  </div>
+</div></div>
+
 <script>
 /* ============================================================
    ESTUDIO JURÍDICO — lógica de la aplicación
@@ -265,9 +315,14 @@ function initSupabase(){
   const key = localStorage.getItem('ej_key');
   if(url && key){
     supa = window.supabase.createClient(url, key);
-    document.getElementById('setupPane').classList.add('hidden');
-    document.getElementById('loginPane').classList.remove('hidden');
-    checkSesion();
+    if(location.hash.startsWith('#activar')){
+      document.getElementById('activatePane').classList.remove('hidden');
+    } else {
+      document.getElementById('loginPane').classList.remove('hidden');
+      checkSesion();
+    }
+  } else {
+    document.getElementById('setupPane').classList.remove('hidden');
   }
 }
 function guardarConfig(){
@@ -276,37 +331,38 @@ function guardarConfig(){
   if(!url || !key){ setMsg('setupMsg','Completa ambos campos.','err'); return; }
   localStorage.setItem('ej_url', url);
   localStorage.setItem('ej_key', key);
-  initSupabase();
+  location.reload();
 }
 function cambiarConfig(){
   localStorage.removeItem('ej_url'); localStorage.removeItem('ej_key');
-  document.getElementById('loginPane').classList.add('hidden');
-  document.getElementById('setupPane').classList.remove('hidden');
-}
-
-/* ---------- Tabs login/registro ---------- */
-function cambiarTab(t){
-  document.getElementById('tabLogin').classList.toggle('active', t==='login');
-  document.getElementById('tabSignup').classList.toggle('active', t==='signup');
-  document.getElementById('loginFields').classList.toggle('hidden', t!=='login');
-  document.getElementById('signupFields').classList.toggle('hidden', t!=='signup');
+  location.reload();
 }
 function setMsg(id, text, cls){
   const el = document.getElementById(id);
   el.innerHTML = text ? `<div class="msg ${cls}">${text}</div>` : '';
 }
 
-/* ---------- Auth ---------- */
-async function registrar(){
-  const nombre = document.getElementById('suNombre').value.trim();
-  const email = document.getElementById('suEmail').value.trim();
-  const pass = document.getElementById('suPass').value;
-  if(!nombre||!email||!pass){ setMsg('loginMsg','Completa todos los campos.','err'); return; }
+/* ---------- Activación de cuenta invitada ---------- */
+async function activarCuenta(){
+  const nombre = document.getElementById('actNombre').value.trim();
+  const email = document.getElementById('actEmail').value.trim();
+  const pass = document.getElementById('actPass').value;
+  if(!nombre||!email||!pass){ setMsg('activateMsg','Completa todos los campos.','err'); return; }
   const {data, error} = await supa.auth.signUp({email, password: pass, options:{data:{nombre}}});
-  if(error){ setMsg('loginMsg', error.message, 'err'); return; }
-  setMsg('loginMsg','Cuenta creada. Ya puedes ingresar.','ok');
-  cambiarTab('login');
+  if(error){ setMsg('activateMsg', error.message, 'err'); return; }
+  // Esperar un momento a que el trigger cree el perfil (si el correo fue invitado)
+  await new Promise(r=>setTimeout(r,900));
+  const uid = data.user?.id;
+  const {data: p} = uid ? await supa.from('profiles').select('*').eq('id', uid).maybeSingle() : {data:null};
+  if(!p){
+    setMsg('activateMsg','Este correo no tiene una invitación activa del administrador. Verifica que escribiste el correo exacto al que te invitaron.','err');
+    return;
+  }
+  setMsg('activateMsg','Cuenta activada correctamente. Ya puedes ingresar.','ok');
+  setTimeout(()=>{ location.hash=''; location.reload(); }, 1400);
 }
+
+/* ---------- Auth ---------- */
 async function ingresar(){
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPass').value;
@@ -320,12 +376,21 @@ async function checkSesion(){
 }
 async function cargarSesion(u){
   usuario = u;
-  const {data: p} = await supa.from('profiles').select('*').eq('id', u.id).single();
+  const {data: p} = await supa.from('profiles').select('*').eq('id', u.id).maybeSingle();
+  if(!p){
+    setMsg('loginMsg','Tu cuenta no tiene acceso autorizado. Pide al administrador que te invite.','err');
+    await supa.auth.signOut();
+    return;
+  }
   perfil = p;
   document.getElementById('authScreen').style.display='none';
   document.getElementById('appShell').classList.add('show');
+  const iniciales = (perfil.nombre||u.email||'?').trim().split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
   document.getElementById('userRolLbl').textContent = (perfil?.rol||'—').toUpperCase();
-  document.getElementById('userFoot').innerHTML = `${perfil?.nombre||u.email}<br><span class="badge badge-rol">${perfil?.rol||''}</span>`;
+  document.getElementById('userAvatar').textContent = iniciales;
+  document.getElementById('userNombreLbl').textContent = perfil?.nombre||u.email;
+  document.getElementById('userRolLbl2').textContent = perfil?.rol||'';
+  if(perfil.rol === 'admin') document.getElementById('navUsuarios').classList.remove('hidden');
   irVista('dashboard');
 }
 async function cerrarSesion(){
@@ -349,11 +414,11 @@ async function consultarPortal(){
   const {data, error} = await supa.from('consulta_publica').select('*')
     .or(`nurej.eq.${q},ianus.eq.${q},ci.eq.${q}`);
   if(error || !data || data.length===0){
-    box.innerHTML = `<div class="portal-result">No se encontró ningún caso con ese dato. Verifica el código o CI ingresado.</div>`;
+    box.innerHTML = `<div class="portal-result fade-in">No se encontró ningún caso con ese dato. Verifica el código o CI ingresado.</div>`;
     return;
   }
   box.innerHTML = data.map(c=>`
-    <div class="portal-result">
+    <div class="portal-result fade-in">
       <div class="row"><span>NUREJ</span><b>${c.nurej||'—'}</b></div>
       <div class="row"><span>IANUS</span><b>${c.ianus||'—'}</b></div>
       <div class="row"><span>Materia</span><b>${c.materia||'—'}</b></div>
@@ -363,22 +428,35 @@ async function consultarPortal(){
     </div>`).join('');
 }
 
+/* ---------- Sidebar móvil ---------- */
+function toggleSidebar(force){
+  const open = typeof force === 'boolean' ? force : !document.getElementById('sidebar').classList.contains('open');
+  document.getElementById('sidebar').classList.toggle('open', open);
+  document.getElementById('sbBackdrop').classList.toggle('show', open);
+}
+
 /* ---------- Navegación de vistas ---------- */
 function irVista(v){
   document.querySelectorAll('.nav-item[data-view]').forEach(n=>n.classList.toggle('active', n.dataset.view===v));
-  const titulos = {dashboard:'Dashboard', casos:'Casos (NUREJ/IANUS)', agenda:'Agenda', honorarios:'Honorarios', clientes:'Clientes'};
+  const titulos = {dashboard:'Dashboard', casos:'Casos (NUREJ/IANUS)', agenda:'Agenda', honorarios:'Honorarios', clientes:'Clientes', usuarios:'Usuarios'};
   document.getElementById('viewTitle').textContent = titulos[v];
+  toggleSidebar(false);
   if(v==='dashboard') renderDashboard();
   if(v==='casos') renderCasos();
   if(v==='agenda') renderAgenda();
   if(v==='honorarios') renderHonorarios();
   if(v==='clientes') renderClientes();
+  if(v==='usuarios') renderUsuarios();
+}
+function skeletonPanel(){
+  return `<div class="panel"><div class="panel-head"><div class="skel" style="width:160px;"></div></div>
+  <div style="padding:16px 18px;">${[1,2,3].map(()=>`<div class="skel" style="width:100%;height:16px;margin-bottom:12px;"></div>`).join('')}</div></div>`;
 }
 
 /* ---------- Dashboard ---------- */
 async function renderDashboard(){
   const el = document.getElementById('content');
-  el.innerHTML = '<p style="color:var(--slate)">Cargando…</p>';
+  el.innerHTML = skeletonPanel();
   const [{count: totalCasos}, {data: audiencias}, {data: honorarios}, {data: plazos}] = await Promise.all([
     supa.from('casos').select('*', {count:'exact', head:true}),
     supa.from('audiencias').select('*, casos(nurej,materia)').gte('fecha', new Date().toISOString()).order('fecha').limit(5),
@@ -386,27 +464,27 @@ async function renderDashboard(){
     supa.from('plazos').select('*, casos(nurej)').eq('cumplido', false).order('fecha_limite').limit(5)
   ]);
   const saldoPendiente = (honorarios||[]).reduce((s,h)=> s + (Number(h.monto_total)-Number(h.pagado)), 0);
-  const hoy = new Date(); const en7 = new Date(Date.now()+7*86400000);
+  const en7 = new Date(Date.now()+7*86400000);
   const plazosUrgentes = (plazos||[]).filter(p=> new Date(p.fecha_limite) <= en7);
 
   el.innerHTML = `
-    <div class="stat-grid">
+    <div class="stat-grid fade-in">
       <div class="stat-card"><div class="num">${totalCasos??0}</div><div class="lbl">Casos totales</div></div>
       <div class="stat-card"><div class="num">${(audiencias||[]).length}</div><div class="lbl">Próximas audiencias</div></div>
       <div class="stat-card"><div class="num">Bs. ${saldoPendiente.toFixed(0)}</div><div class="lbl">Honorarios pendientes</div></div>
       <div class="stat-card urgent"><div class="num">${plazosUrgentes.length}</div><div class="lbl">Plazos urgentes (≤7 días)</div></div>
     </div>
-    <div class="panel">
+    <div class="panel fade-in">
       <div class="panel-head"><h3>Próximas audiencias</h3></div>
-      ${(audiencias||[]).length ? `<table><tbody>${audiencias.map(a=>`
+      ${(audiencias||[]).length ? `<div class="table-wrap"><table><tbody>${audiencias.map(a=>`
         <tr><td>${new Date(a.fecha).toLocaleString('es-BO',{dateStyle:'medium',timeStyle:'short'})}</td>
-        <td>${a.tipo||'Audiencia'}</td><td>${a.casos?.nurej||'—'}</td></tr>`).join('')}</tbody></table>`
+        <td>${a.tipo||'Audiencia'}</td><td>${a.casos?.nurej||'—'}</td></tr>`).join('')}</tbody></table></div>`
         : '<div class="empty">No hay audiencias próximas registradas.</div>'}
     </div>
-    <div class="panel">
+    <div class="panel fade-in">
       <div class="panel-head"><h3>Plazos próximos a vencer</h3></div>
-      ${(plazos||[]).length ? `<table><tbody>${plazos.map(p=>`
-        <tr><td>${p.fecha_limite}</td><td>${p.descripcion}</td><td>${p.casos?.nurej||'—'}</td></tr>`).join('')}</tbody></table>`
+      ${(plazos||[]).length ? `<div class="table-wrap"><table><tbody>${plazos.map(p=>`
+        <tr><td>${p.fecha_limite}</td><td>${p.descripcion}</td><td>${p.casos?.nurej||'—'}</td></tr>`).join('')}</tbody></table></div>`
         : '<div class="empty">No hay plazos pendientes.</div>'}
     </div>`;
 }
@@ -414,16 +492,17 @@ async function renderDashboard(){
 /* ---------- Casos ---------- */
 async function renderCasos(){
   const el = document.getElementById('content');
+  el.innerHTML = skeletonPanel();
   const {data: casos} = await supa.from('casos').select('*, clientes(nombre), profiles(nombre)').order('creado_en',{ascending:false});
   el.innerHTML = `
-    <div class="panel">
+    <div class="panel fade-in">
       <div class="panel-head"><h3>Casos registrados</h3><button class="btn-sm primary" onclick="abrirModalCaso()">+ Nuevo caso</button></div>
-      ${casos && casos.length ? `<table><thead><tr><th>NUREJ</th><th>Materia</th><th>Cliente</th><th>Abogado</th><th>Estado</th></tr></thead>
+      ${casos && casos.length ? `<div class="table-wrap"><table><thead><tr><th>NUREJ</th><th>Materia</th><th>Cliente</th><th>Abogado</th><th>Estado</th></tr></thead>
       <tbody>${casos.map(c=>`
         <tr class="row-click" onclick="abrirDetalleCaso('${c.id}')">
           <td>${c.nurej||'—'}</td><td>${c.materia||'—'}</td><td>${c.clientes?.nombre||'—'}</td>
           <td>${c.profiles?.nombre||'—'}</td><td><span class="pill pill-${c.estado}">${c.estado}</span></td>
-        </tr>`).join('')}</tbody></table>` : '<div class="empty">Aún no hay casos. Crea el primero.</div>'}
+        </tr>`).join('')}</tbody></table></div>` : '<div class="empty">Aún no hay casos. Crea el primero.</div>'}
     </div>`;
 }
 async function abrirModalCaso(){
@@ -451,7 +530,7 @@ async function guardarCaso(){
   cerrarModal('overlayCaso'); renderCasos();
 }
 
-/* ---------- Detalle de caso (audiencias / plazos / honorarios / documentos) ---------- */
+/* ---------- Detalle de caso ---------- */
 async function abrirDetalleCaso(id){
   casoActivoId = id;
   const {data: c} = await supa.from('casos').select('*, clientes(nombre)').eq('id', id).single();
@@ -476,8 +555,8 @@ async function cargarAudiencias(){
     </div>
     <div class="field"><label>Lugar</label><input id="audLugar"></div>
     <button class="btn-sm primary" onclick="agregarAudiencia()">+ Agregar audiencia</button>
-    <table style="margin-top:14px;"><tbody>${(data||[]).map(a=>`
-      <tr><td>${new Date(a.fecha).toLocaleString('es-BO',{dateStyle:'medium',timeStyle:'short'})}</td><td>${a.tipo||''}</td><td>${a.lugar||''}</td></tr>`).join('') || '<tr><td class="empty">Sin audiencias registradas.</td></tr>'}</tbody></table>`;
+    <div class="table-wrap"><table style="margin-top:14px;"><tbody>${(data||[]).map(a=>`
+      <tr><td>${new Date(a.fecha).toLocaleString('es-BO',{dateStyle:'medium',timeStyle:'short'})}</td><td>${a.tipo||''}</td><td>${a.lugar||''}</td></tr>`).join('') || '<tr><td class="empty">Sin audiencias registradas.</td></tr>'}</tbody></table></div>`;
 }
 async function agregarAudiencia(){
   const fecha = document.getElementById('audFecha').value;
@@ -495,9 +574,9 @@ async function cargarPlazos(){
     </div>
     <div class="field"><label>Días hábiles</label><input id="plzDias" type="number"></div>
     <button class="btn-sm primary" onclick="agregarPlazo()">+ Agregar plazo</button>
-    <table style="margin-top:14px;"><tbody>${(data||[]).map(p=>`
+    <div class="table-wrap"><table style="margin-top:14px;"><tbody>${(data||[]).map(p=>`
       <tr><td>${p.fecha_limite}</td><td>${p.descripcion}</td><td>${p.cumplido?'<span class="pill pill-Concluido">Cumplido</span>':'<span class="pill pill-Suspendido">Pendiente</span>'}</td>
-      <td><button class="btn-sm" onclick="marcarPlazoCumplido('${p.id}')">Marcar cumplido</button></td></tr>`).join('') || '<tr><td class="empty">Sin plazos registrados.</td></tr>'}</tbody></table>`;
+      <td><button class="btn-sm" onclick="marcarPlazoCumplido('${p.id}')">Marcar cumplido</button></td></tr>`).join('') || '<tr><td class="empty">Sin plazos registrados.</td></tr>'}</tbody></table></div>`;
 }
 async function agregarPlazo(){
   const fecha = document.getElementById('plzFecha').value;
@@ -520,7 +599,7 @@ async function cargarHonorariosCaso(){
       </div>
       <div class="field" style="margin-top:14px;"><label>Registrar pago (Bs.)</label><input id="pagoMonto" type="number"></div>
       <button class="btn-sm primary" onclick="registrarPago('${h.id}')">+ Registrar pago</button>
-      <table style="margin-top:14px;"><tbody>${(h.pagos_honorario||[]).map(p=>`<tr><td>${p.fecha}</td><td>Bs. ${Number(p.monto).toFixed(2)}</td></tr>`).join('') || '<tr><td class="empty">Sin pagos registrados.</td></tr>'}</tbody></table>`
+      <div class="table-wrap"><table style="margin-top:14px;"><tbody>${(h.pagos_honorario||[]).map(p=>`<tr><td>${p.fecha}</td><td>Bs. ${Number(p.monto).toFixed(2)}</td></tr>`).join('') || '<tr><td class="empty">Sin pagos registrados.</td></tr>'}</tbody></table></div>`
     : `
       <div class="field"><label>Monto total de honorarios (Bs.)</label><input id="honMonto" type="number"></div>
       <button class="btn-sm primary" onclick="crearHonorario()">Crear liquidación de honorarios</button>`}`;
@@ -568,17 +647,18 @@ async function descargarDoc(path){
 /* ---------- Agenda ---------- */
 async function renderAgenda(){
   const el = document.getElementById('content');
+  el.innerHTML = skeletonPanel();
   const {data: audiencias} = await supa.from('audiencias').select('*, casos(nurej)').order('fecha');
   const {data: plazos} = await supa.from('plazos').select('*, casos(nurej)').eq('cumplido', false).order('fecha_limite');
   el.innerHTML = `
-    <div class="panel"><div class="panel-head"><h3>Audiencias</h3></div>
-      ${(audiencias||[]).length ? `<table><thead><tr><th>Fecha</th><th>Tipo</th><th>Caso</th><th>Lugar</th></tr></thead>
-      <tbody>${audiencias.map(a=>`<tr><td>${new Date(a.fecha).toLocaleString('es-BO',{dateStyle:'medium',timeStyle:'short'})}</td><td>${a.tipo||''}</td><td>${a.casos?.nurej||'—'}</td><td>${a.lugar||''}</td></tr>`).join('')}</tbody></table>`
+    <div class="panel fade-in"><div class="panel-head"><h3>Audiencias</h3></div>
+      ${(audiencias||[]).length ? `<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Caso</th><th>Lugar</th></tr></thead>
+      <tbody>${audiencias.map(a=>`<tr><td>${new Date(a.fecha).toLocaleString('es-BO',{dateStyle:'medium',timeStyle:'short'})}</td><td>${a.tipo||''}</td><td>${a.casos?.nurej||'—'}</td><td>${a.lugar||''}</td></tr>`).join('')}</tbody></table></div>`
       : '<div class="empty">No hay audiencias registradas. Agrégalas desde el detalle de cada caso.</div>'}
     </div>
-    <div class="panel"><div class="panel-head"><h3>Plazos procesales pendientes</h3></div>
-      ${(plazos||[]).length ? `<table><thead><tr><th>Fecha límite</th><th>Descripción</th><th>Caso</th><th>Días hábiles</th></tr></thead>
-      <tbody>${plazos.map(p=>`<tr><td>${p.fecha_limite}</td><td>${p.descripcion}</td><td>${p.casos?.nurej||'—'}</td><td>${p.dias_habiles??'—'}</td></tr>`).join('')}</tbody></table>`
+    <div class="panel fade-in"><div class="panel-head"><h3>Plazos procesales pendientes</h3></div>
+      ${(plazos||[]).length ? `<div class="table-wrap"><table><thead><tr><th>Fecha límite</th><th>Descripción</th><th>Caso</th><th>Días hábiles</th></tr></thead>
+      <tbody>${plazos.map(p=>`<tr><td>${p.fecha_limite}</td><td>${p.descripcion}</td><td>${p.casos?.nurej||'—'}</td><td>${p.dias_habiles??'—'}</td></tr>`).join('')}</tbody></table></div>`
       : '<div class="empty">No hay plazos pendientes.</div>'}
     </div>`;
 }
@@ -586,13 +666,14 @@ async function renderAgenda(){
 /* ---------- Honorarios (vista global) ---------- */
 async function renderHonorarios(){
   const el = document.getElementById('content');
+  el.innerHTML = skeletonPanel();
   const {data} = await supa.from('honorarios').select('*, casos(nurej, clientes(nombre))').order('creado_en',{ascending:false});
   el.innerHTML = `
-    <div class="panel"><div class="panel-head"><h3>Liquidaciones de honorarios (Bs.)</h3></div>
-    ${(data||[]).length ? `<table><thead><tr><th>Caso</th><th>Cliente</th><th>Monto total</th><th>Pagado</th><th>Saldo</th></tr></thead>
+    <div class="panel fade-in"><div class="panel-head"><h3>Liquidaciones de honorarios (Bs.)</h3></div>
+    ${(data||[]).length ? `<div class="table-wrap"><table><thead><tr><th>Caso</th><th>Cliente</th><th>Monto total</th><th>Pagado</th><th>Saldo</th></tr></thead>
     <tbody>${data.map(h=>`<tr><td>${h.casos?.nurej||'—'}</td><td>${h.casos?.clientes?.nombre||'—'}</td>
     <td>Bs. ${Number(h.monto_total).toFixed(2)}</td><td>Bs. ${Number(h.pagado).toFixed(2)}</td>
-    <td>Bs. ${(Number(h.monto_total)-Number(h.pagado)).toFixed(2)}</td></tr>`).join('')}</tbody></table>`
+    <td>Bs. ${(Number(h.monto_total)-Number(h.pagado)).toFixed(2)}</td></tr>`).join('')}</tbody></table></div>`
     : '<div class="empty">Aún no hay honorarios registrados. Créalos desde el detalle de cada caso.</div>'}
     </div>`;
 }
@@ -600,11 +681,12 @@ async function renderHonorarios(){
 /* ---------- Clientes ---------- */
 async function renderClientes(){
   const el = document.getElementById('content');
+  el.innerHTML = skeletonPanel();
   const {data} = await supa.from('clientes').select('*').order('nombre');
   el.innerHTML = `
-    <div class="panel"><div class="panel-head"><h3>Clientes</h3><button class="btn-sm primary" onclick="abrirModalCliente()">+ Nuevo cliente</button></div>
-    ${(data||[]).length ? `<table><thead><tr><th>Nombre</th><th>CI</th><th>Teléfono</th><th>Correo</th></tr></thead>
-    <tbody>${data.map(c=>`<tr><td>${c.nombre}</td><td>${c.ci||'—'}</td><td>${c.telefono||'—'}</td><td>${c.email||'—'}</td></tr>`).join('')}</tbody></table>`
+    <div class="panel fade-in"><div class="panel-head"><h3>Clientes</h3><button class="btn-sm primary" onclick="abrirModalCliente()">+ Nuevo cliente</button></div>
+    ${(data||[]).length ? `<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>CI</th><th>Teléfono</th><th>Correo</th></tr></thead>
+    <tbody>${data.map(c=>`<tr><td>${c.nombre}</td><td>${c.ci||'—'}</td><td>${c.telefono||'—'}</td><td>${c.email||'—'}</td></tr>`).join('')}</tbody></table></div>`
     : '<div class="empty">Aún no hay clientes registrados.</div>'}
     </div>`;
 }
@@ -620,13 +702,66 @@ async function guardarCliente(){
   cerrarModal('overlayCliente'); renderClientes();
 }
 
+/* ---------- Usuarios (solo admin) ---------- */
+async function renderUsuarios(){
+  const el = document.getElementById('content');
+  el.innerHTML = skeletonPanel();
+  const [{data: perfiles}, {data: invitaciones}] = await Promise.all([
+    supa.from('profiles').select('*').order('nombre'),
+    supa.from('invitaciones').select('*').eq('usado', false).order('creado_en',{ascending:false})
+  ]);
+  const roles = ['admin','abogado','asistente','secretaria'];
+  el.innerHTML = `
+    <div class="panel fade-in">
+      <div class="panel-head"><h3>Personal con acceso</h3><button class="btn-sm primary" onclick="abrirModalInvitar()">+ Invitar usuario</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th></th></tr></thead>
+      <tbody>${(perfiles||[]).map(p=>`
+        <tr class="user-row">
+          <td>${p.nombre||'—'}</td><td>${p.email||'—'}</td>
+          <td><select id="rolSel_${p.id}">${roles.map(r=>`<option value="${r}" ${r===p.rol?'selected':''}>${r}</option>`).join('')}</select></td>
+          <td><button class="btn-sm primary" onclick="guardarRol('${p.id}')">Guardar</button></td>
+        </tr>`).join('') || '<tr><td class="empty">No hay usuarios.</td></tr>'}</tbody></table></div>
+    </div>
+    <div class="panel fade-in">
+      <div class="panel-head"><h3>Invitaciones pendientes</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Correo</th><th>Rol</th><th>Enlace</th></tr></thead>
+      <tbody>${(invitaciones||[]).map(i=>`
+        <tr><td>${i.email}</td><td>${i.rol}</td>
+        <td><button class="btn-sm" onclick="copiarEnlaceActivacion()">Copiar enlace de activación</button></td></tr>`).join('') || '<tr><td class="empty">No hay invitaciones pendientes.</td></tr>'}</tbody></table></div>
+    </div>`;
+}
+function abrirModalInvitar(){
+  ['invNombre','invEmail'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('invRol').value='abogado';
+  document.getElementById('overlayInvitar').classList.add('show');
+}
+async function crearInvitacion(){
+  const payload = {
+    nombre: document.getElementById('invNombre').value.trim(),
+    email: document.getElementById('invEmail').value.trim(),
+    rol: document.getElementById('invRol').value
+  };
+  if(!payload.email){ alert('Indica el correo.'); return; }
+  const {error} = await supa.from('invitaciones').insert(payload);
+  if(error){ alert('Error: '+error.message); return; }
+  cerrarModal('overlayInvitar');
+  renderUsuarios();
+}
+async function guardarRol(id){
+  const rol = document.getElementById('rolSel_'+id).value;
+  const {error} = await supa.from('profiles').update({rol}).eq('id', id);
+  if(error){ alert('Error al guardar: '+error.message); return; }
+  renderUsuarios();
+}
+function copiarEnlaceActivacion(){
+  const link = location.origin + location.pathname + '#activar';
+  navigator.clipboard.writeText(link).then(()=>alert('Enlace copiado. Compártelo junto con el correo invitado, por WhatsApp o correo.'));
+}
+
 /* ---------- Utilidades ---------- */
 function cerrarModal(id){ document.getElementById(id).classList.remove('show'); }
 
 initSupabase();
-if(!localStorage.getItem('ej_url')){
-  document.getElementById('setupPane').classList.remove('hidden');
-}
 </script>
 </body>
 </html>
